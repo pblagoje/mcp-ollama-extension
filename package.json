@@ -2,11 +2,12 @@
   "name": "mcp-ollama-extension",
   "displayName": "MCP Ollama Manager",
   "description": "Manage MCP Ollama Python server from VS Code - start, stop, configure and monitor your Ollama MCP server",
-  "version": "1.0.0",
-  "publisher": "mcp-ollama",
+  "version": "1.0.6",
+  "publisher": "internetics",
+  "icon": "icon.png",
   "author": {
-    "name": "MCP Ollama Team",
-    "email": "support@mcp-ollama.com"
+    "name": "MCP Ollama Python Team",
+    "email": "help@internetics.net"
   },
   "license": "MIT",
   "homepage": "https://github.com/mcp-ollama/mcp-ollama-extension",
@@ -85,32 +86,66 @@
         "command": "mcp-ollama.clearLogs",
         "title": "Clear Logs",
         "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.chatWithModel",
+        "title": "Chat with Model",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.generateText",
+        "title": "Generate Text",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.createEmbedding",
+        "title": "Create Embedding",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.showModelDetails",
+        "title": "Show Model Details",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.pullModel",
+        "title": "Pull Model",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.deleteModel",
+        "title": "Delete Model",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.listRunningModels",
+        "title": "List Running Models",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.explainCode",
+        "title": "Explain Code",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.writeDocstring",
+        "title": "Write Docstring",
+        "category": "MCP Ollama"
       }
     ],
     "configuration": {
       "title": "MCP Ollama Manager",
       "properties": {
-        "mcp-ollama.serverPath": {
+        "mcp-ollama.serverHost": {
           "type": "string",
           "default": "",
-          "description": "Path to the mcp-ollama-python installation directory",
-          "scope": "machine"
+          "description": "Hostname where Ollama is running (optional - uses OLLAMA_HOST environment variable if set, otherwise defaults to 'localhost'). Examples: 'localhost', 'ai', '192.168.1.100'"
         },
         "mcp-ollama.pythonPath": {
           "type": "string",
-          "default": "python",
-          "description": "Path to Python executable",
+          "default": "",
+          "description": "Path to Python executable (optional - auto-detects if empty). Use this if you have multiple Python installations.",
           "scope": "machine"
-        },
-        "mcp-ollama.serverHost": {
-          "type": "string",
-          "default": "localhost",
-          "description": "Host for the MCP server"
-        },
-        "mcp-ollama.serverPort": {
-          "type": "number",
-          "default": 8000,
-          "description": "Port for the MCP server"
         },
         "mcp-ollama.autoStart": {
           "type": "boolean",
@@ -155,7 +190,8 @@
         {
           "id": "mcp-ollama.models",
           "name": "Ollama Models",
-          "when": "mcp-ollama.serverRunning"
+          "when": "mcp-ollama.serverRunning",
+          "icon": "$(server)"
         }
       ]
     },
@@ -180,10 +216,12 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run build:prod",
     "compile": "webpack",
+    "build:dev": "cross-env NODE_ENV=development webpack",
+    "build:prod": "cross-env NODE_ENV=production webpack",
     "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
+    "package": "npm run build:prod && vsce package",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
@@ -195,18 +233,20 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "18.x",
     "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "@vscode/test-electron": "^2.3.9",
-    "eslint": "^8.54.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.0.1",
     "glob": "^13.0.3",
-    "mocha": "^11.7.5",
+    "mocha": "^10.7.5",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.0",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "axios": "^1.6.0"
   }
 }

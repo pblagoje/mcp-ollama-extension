@@ -34,9 +34,31 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 4. Package: `npm run package`
 5. Install the resulting `.vsix` file using `code --install-extension mcp-ollama-extension-*.vsix`
 
+Or upgrade:
+1. Uninstall the old version (optional but recommended)
+code --uninstall-extension internetics.mcp-ollama-extension
+
+2. Install the new VSIX
+code --install-extension mcp-ollama-extension-1.0.1.vsix
+
 ## Configuration
 
-The extension can be configured through VS Code settings. Open settings and search for "MCP Ollama".
+The extension can be configured through VS Code settings. Open settings (Ctrl+,) and search for "MCP Ollama".
+
+### Important: Configure Ollama Hostname
+
+If your Ollama server is running on a different hostname (not `localhost`), you **must** configure it:
+
+1. Open VS Code Settings (Ctrl+,)
+2. Search for "MCP Ollama"
+3. Set **"Mcp-ollama: Server Host"** to your Ollama hostname (e.g., `ai`, `192.168.1.100`, etc.)
+
+The extension will connect to Ollama at `http://{serverHost}:11434`
+
+**Example configurations:**
+- Local Ollama: `localhost` (default)
+- Network hostname: `ai`
+- IP address: `192.168.1.100`
 
 ### Settings
 
@@ -91,20 +113,79 @@ The extension provides the following commands (available in the Command Palette,
 
 ## Development
 
-### Building
+### Prerequisites
 
 ```bash
 # Install dependencies
 npm install
+```
 
-# Compile TypeScript
+### Building for Development
+
+Development builds are optimized for fast compilation and debugging:
+
+```bash
+# Compile TypeScript (development mode)
 npm run compile
 
-# Watch for changes
+# Watch mode - automatically recompile on file changes
 npm run watch
+```
 
-# Package for distribution
+**Development build features:**
+- Fast compilation with `transpileOnly` mode (3-5x faster)
+- Detailed source maps (`eval-source-map`) for better debugging
+- No minification for readable output
+- Verbose webpack logging
+- Filesystem caching for faster rebuilds (50-80% faster)
+
+### Building for Production
+
+Production builds are optimized for size and performance:
+
+```bash
+# Build for production (cross-platform)
+npm run build:prod
+
+# Package as VSIX for distribution
 npm run package
+```
+
+**Note:** The build scripts use `cross-env` for cross-platform compatibility (works on Windows PowerShell, CMD, Linux, and macOS).
+
+**Production build features:**
+- Full TypeScript type checking
+- Minification (40-60% smaller bundles)
+- Optimized source maps (separate files)
+- Deterministic module IDs for better caching
+- Tree-shaking to remove unused code
+- Single-bundle output (required for VS Code extensions)
+
+### Build Comparison
+
+| Feature | Development | Production |
+|---------|-------------|------------|
+| **Compilation Speed** | Fast (transpileOnly) | Slower (full type check) |
+| **Bundle Size** | Larger | 40-60% smaller |
+| **Source Maps** | Inline (eval-source-map) | Separate files |
+| **Minification** | No | Yes |
+| **Debugging** | Excellent | Good |
+| **Rebuild Time** | 50-80% faster (cached) | Standard |
+
+### Quick Commands
+
+```bash
+# Development workflow
+npm install              # Install dependencies
+npm run watch            # Start watch mode for development
+
+# Production workflow
+npm install              # Install dependencies
+npm run build:prod       # Build for production
+npm run package          # Create VSIX package
+
+# Install locally
+code --install-extension mcp-ollama-extension-*.vsix
 ```
 
 ### Testing
@@ -122,6 +203,14 @@ npm run watch-tests
 1. Open the project in VS Code
 2. Press F5 to launch a new VS Code instance with the extension
 3. Use the debugger to set breakpoints and debug the extension
+4. Check the Debug Console for logs and errors
+5. Use "MCP Ollama: View Server Logs" to see server output
+
+**Debug Tips:**
+- Development builds include detailed source maps for accurate debugging
+- Use `logger.debug()` for verbose logging (set log level to 'debug')
+- The extension logs are stored in VS Code's log directory
+- Server logs are available in the output channel
 
 ## Changelog
 

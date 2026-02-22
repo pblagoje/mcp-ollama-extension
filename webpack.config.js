@@ -4,10 +4,14 @@
 
 const path = require('path');
 
+// Environment detection
+const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = !isProduction;
+
 /**@type {import('webpack').Configuration}*/
 const config = {
   target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-  mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
+  mode: isProduction ? 'production' : 'development', // Environment-based mode for proper optimizations
 
   entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
@@ -30,15 +34,69 @@ const config = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader'
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: isDevelopment, // Faster compilation in development
+              compilerOptions: {
+                module: 'commonjs',
+                target: 'es2020',
+                strict: true,
+                esModuleInterop: true,
+                skipLibCheck: true,
+                forceConsistentCasingInFileNames: true
+              }
+            }
           }
         ]
       }
     ]
   },
-  devtool: 'nosources-source-map',
+  // Environment-specific source maps
+  devtool: isProduction ? 'source-map' : 'eval-source-map',
+
   infrastructureLogging: {
-    level: "log", // enables webpack logging
+    level: isDevelopment ? "log" : "error", // Verbose logging in dev, errors only in prod
   },
+
+  // Filesystem caching for faster rebuilds
+  cache: {
+    type: 'filesystem',
+    version: '1.0'
+  },
+
+  // Performance hints
+  performance: {
+    hints: isProduction ? 'warning' : false,
+    maxAssetSize: 1000000, // 1MB - VS Code extensions can be larger than web apps
+    maxEntrypointSize: 1000000
+  },
+
+  // Production optimizations
+  optimization: isProduction ? {
+    minimize: true,
+    moduleIds: 'deterministic'
+    // Note: splitChunks is disabled because VS Code extensions must be a single bundle
+  } : {
+    minimize: false
+  }
 };
-module.exports = config;
+
+/**
+ * Validates webpack configuration
+ * @param {import('webpack').Configuration} config
+ * @returns {import('webpack').Configuration}
+ */
+function validateConfig(config) {
+  if (!config.entry) {
+    throw new Error('Webpack entry point is required');
+  }
+  if (!config.output?.path) {
+    throw new Error('Webpack output path is required');
+  }
+  if (config.devtool && config.devtool.includes('eval') && isProduction) {
+    console.warn('Warning: eval source maps should not be used in production');
+  }
+  return config;
+}
+
+module.exports = validateConfig(config);
