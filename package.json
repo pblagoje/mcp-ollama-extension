@@ -1,0 +1,212 @@
+{
+  "name": "mcp-ollama-extension",
+  "displayName": "MCP Ollama Manager",
+  "description": "Manage MCP Ollama Python server from VS Code - start, stop, configure and monitor your Ollama MCP server",
+  "version": "1.0.0",
+  "publisher": "mcp-ollama",
+  "author": {
+    "name": "MCP Ollama Team",
+    "email": "support@mcp-ollama.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/mcp-ollama/mcp-ollama-extension",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mcp-ollama/mcp-ollama-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mcp-ollama/mcp-ollama-extension/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "keywords": [
+    "mcp",
+    "ollama",
+    "ai",
+    "llm",
+    "model",
+    "server",
+    "management",
+    "python"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mcp-ollama.startServer",
+        "title": "Start MCP Ollama Server",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.stopServer",
+        "title": "Stop MCP Ollama Server",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.restartServer",
+        "title": "Restart MCP Ollama Server",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.showServerStatus",
+        "title": "Show Server Status",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.configureServer",
+        "title": "Configure Server",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.viewLogs",
+        "title": "View Server Logs",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.listModels",
+        "title": "List Available Models",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.openLogFile",
+        "title": "Open Log File",
+        "category": "MCP Ollama"
+      },
+      {
+        "command": "mcp-ollama.clearLogs",
+        "title": "Clear Logs",
+        "category": "MCP Ollama"
+      }
+    ],
+    "configuration": {
+      "title": "MCP Ollama Manager",
+      "properties": {
+        "mcp-ollama.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the mcp-ollama-python installation directory",
+          "scope": "machine"
+        },
+        "mcp-ollama.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python executable",
+          "scope": "machine"
+        },
+        "mcp-ollama.serverHost": {
+          "type": "string",
+          "default": "localhost",
+          "description": "Host for the MCP server"
+        },
+        "mcp-ollama.serverPort": {
+          "type": "number",
+          "default": 8000,
+          "description": "Port for the MCP server"
+        },
+        "mcp-ollama.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the server when VS Code starts"
+        },
+        "mcp-ollama.logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error"
+          ],
+          "default": "info",
+          "description": "Log level for the MCP Ollama server"
+        },
+        "mcp-ollama.extensionLogLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error"
+          ],
+          "default": "info",
+          "description": "Log level for the VS Code extension itself"
+        }
+      }
+    },
+    "statusBar": [
+      {
+        "id": "mcp-ollama.status",
+        "name": "MCP Ollama Server Status",
+        "text": "$(circle-outline) MCP Ollama",
+        "tooltip": "MCP Ollama Server Status",
+        "command": "mcp-ollama.showServerStatus"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "mcp-ollama.models",
+          "name": "Ollama Models",
+          "when": "mcp-ollama.serverRunning"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "mcp-ollama.listModels",
+          "when": "view == mcp-ollama.models",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mcp-ollama.stopServer",
+          "when": "mcp-ollama.serverRunning"
+        },
+        {
+          "command": "mcp-ollama.startServer",
+          "when": "!mcp-ollama.serverRunning"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.54.0",
+    "glob": "^13.0.3",
+    "mocha": "^11.7.5",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
