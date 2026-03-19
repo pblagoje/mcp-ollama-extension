@@ -73,6 +73,10 @@ temp/
 .cursorignore
 .cursorindexingignore
 
+# Python environment managers (not used in this TypeScript project)
+.pixi/
+.hatch/
+
 # macOS
 .AppleDouble
 .LSOverride
