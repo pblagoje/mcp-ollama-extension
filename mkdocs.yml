@@ -1,0 +1,40 @@
+site_name: MCP Ollama Manager Extension
+site_description: VS Code extension for managing the MCP Ollama Python server
+site_url: https://pblagoje.github.io/mcp-ollama-extension/
+repo_url: https://github.com/pblagoje/mcp-ollama-extension
+repo_name: pblagoje/mcp-ollama-extension
+edit_uri: edit/main/docs/
+
+nav:
+  - Home: index.md
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - tables
+  - toc:
+      permalink: true

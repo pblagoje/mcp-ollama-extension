@@ -64,12 +64,11 @@ The extension will connect to Ollama at `http://{serverHost}:11434`
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `mcp-ollama.serverPath` | string | - | Path to the mcp-ollama-python installation directory |
-| `mcp-ollama.pythonPath` | string | `python` | Path to Python executable |
-| `mcp-ollama.serverHost` | string | `localhost` | Host for the MCP server |
-| `mcp-ollama.serverPort` | number | `8000` | Port for the MCP server |
+| `mcp-ollama.serverHost` | string | `localhost` | Hostname where Ollama is running (overrides `OLLAMA_HOST` env var) |
+| `mcp-ollama.pythonPath` | string | _(auto)_ | Path to Python executable; auto-detected if empty |
 | `mcp-ollama.autoStart` | boolean | `false` | Automatically start the server when VS Code starts |
-| `mcp-ollama.logLevel` | string | `info` | Log level for the server (debug, info, warning, error) |
+| `mcp-ollama.logLevel` | string | `info` | Log level for the MCP Ollama server (debug, info, warning, error) |
+| `mcp-ollama.extensionLogLevel` | string | `info` | Log level for the VS Code extension itself (debug, info, warning, error) |
 
 ## Commands
 
@@ -214,19 +213,17 @@ npm run watch-tests
 
 ## Changelog
 
-### 1.0.0
+See [CHANGELOG.md](CHANGELOG.md) for full release history.
 
-- Initial release
-- Basic server management (start, stop, restart)
-- Status monitoring with health checks
-- Configuration management
-- Log viewing
-- Model listing and management
-- Auto-start capability
+## Support
+
+- Report issues on [GitHub Issues](https://github.com/pblagoje/mcp-ollama-extension/issues)
+- Check the [documentation](https://pblagoje.github.io/mcp-ollama-extension/) for detailed guides
+- Join [GitHub Discussions](https://github.com/pblagoje/mcp-ollama-extension/discussions) for questions and suggestions
 
 ## Contributing
 
-1. Fork the repository
+1. Fork the [repository](https://github.com/pblagoje/mcp-ollama-extension)
 2. Create a feature branch
 3. Make your changes
 4. Add tests if applicable

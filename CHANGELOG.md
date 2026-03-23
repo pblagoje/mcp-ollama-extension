@@ -5,6 +5,19 @@ All notable changes to the MCP Ollama Manager Extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-03-23
+
+### Fixed
+- Corrected GitHub repository URLs throughout (homepage, repository, bugs)
+- Updated Settings reference to match actual extension settings (removed non-existent `serverPath`/`serverPort`, added `extensionLogLevel`)
+- Fixed wrong repository links in `LOGGING.md`
+
+### Added
+- GitHub Pages documentation site at https://pblagoje.github.io/mcp-ollama-extension/
+- MkDocs configuration (`mkdocs.yml`) with Material theme
+- GitHub Actions workflow for automatic documentation deployment
+- Support section in README with links to Issues and Discussions
+
 ## [1.0.0] - 2026-02-13
 
 ### Added

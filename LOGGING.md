@@ -201,4 +201,4 @@ If you encounter issues:
 3. Open the log file
 4. Share relevant log entries when reporting issues
 
-For more information, visit the [GitHub repository](https://github.com/mcp-ollama/mcp-ollama-extension).
+For more information, visit the [GitHub repository](https://github.com/pblagoje/mcp-ollama-extension).
