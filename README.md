@@ -13,7 +13,7 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 
 ## Requirements
 
-- [MCP Ollama Python](https://github.com/mcp-ollama/mcp-ollama-python) installed
+- [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
 - Python 3.7 or higher
 - [Ollama](https://ollama.ai/) installed and running
 
@@ -236,17 +236,11 @@ npm run watch-tests
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Support
-
-- Report issues on [GitHub Issues](https://github.com/mcp-ollama/mcp-ollama-extension/issues)
-- Check the [Wiki](https://github.com/mcp-ollama/mcp-ollama-extension/wiki) for documentation
-- Join our discussions for questions and suggestions
-
 ## Related Projects
 
-- [MCP Ollama Python](https://github.com/mcp-ollama/mcp-ollama-python) - The Python MCP server for Ollama
+- [MCP Ollama Python](https://pblagoje.github.io/mcp-ollama-python/) - The Python MCP server for Ollama
 - [Ollama](https://ollama.ai/) - Get up and running with large language models locally
 
 ---
 
-**Note**: This extension requires the MCP Ollama Python server to be installed separately. Please refer to the [MCP Ollama Python documentation](https://github.com/mcp-ollama/mcp-ollama-python) for installation instructions.
+**Note**: This extension requires the MCP Ollama Python server to be installed separately. Please refer to the [MCP Ollama Python documentation](https://pblagoje.github.io/mcp-ollama-python/) for installation instructions.
