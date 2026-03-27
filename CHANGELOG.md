@@ -5,18 +5,28 @@ All notable changes to the MCP Ollama Manager Extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.7] - 2026-03-23
+## [1.0.8] - 2026-03-27
 
-### Fixed
-- Corrected GitHub repository URLs throughout (homepage, repository, bugs)
-- Updated Settings reference to match actual extension settings (removed non-existent `serverPath`/`serverPort`, added `extensionLogLevel`)
-- Fixed wrong repository links in `LOGGING.md`
+### Changed
+- Version bump for release.
+
+## [1.0.7] - 2026-03-27
 
 ### Added
+- **Ollama Models sidebar view** — new `OllamaModelsProvider` (`TreeDataProvider`) registers against the `mcp-ollama.models` view; lists all locally installed models with name and size; auto-clears when the server stops
+- **`mcp-ollama.refreshModels` command** — refresh icon ($(refresh)) in the view title bar; also fires automatically after every pull or delete operation
+- **AI tool commands** — Chat with Model, Generate Text, Create Embedding, Show Model Details, Pull Model, Delete Model, List Running Models, Explain Code, Write Docstring
 - GitHub Pages documentation site at https://pblagoje.github.io/mcp-ollama-extension/
 - MkDocs configuration (`mkdocs.yml`) with Material theme
 - GitHub Actions workflow for automatic documentation deployment
 - Support section in README with links to Issues and Discussions
+
+### Fixed
+- **OLLAMA_HOST blank in Configure Server dialog** — "Ollama Host" input now pre-fills with the effective resolved host (setting → `OLLAMA_HOST` env var → `localhost`) instead of the raw empty setting value
+- **mcp-ollama-python install check at startup** — extension now silently verifies the module is installed on activation and shows a warning with an "Install Now" button if it is missing
+- Corrected GitHub repository URLs throughout (homepage, repository, bugs)
+- Updated Settings reference to match actual extension settings (removed non-existent `serverPath`/`serverPort`, added `extensionLogLevel`)
+- Fixed wrong repository links in `LOGGING.md`
 
 ## [1.0.0] - 2026-02-13
 

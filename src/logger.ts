@@ -101,6 +101,9 @@ export class Logger {
         }
 
         try {
+            // Ensure parent directory exists
+            await fs.mkdir(path.dirname(this.logFilePath.fsPath), { recursive: true });
+
             const stats = await fs.stat(this.logFilePath.fsPath);
 
             if (stats.size > MAX_LOG_FILE_SIZE) {
@@ -109,9 +112,11 @@ export class Logger {
                 // Use console.log to avoid recursion - don't call this.info() during rotation
                 console.log(`[Logger] Log file rotated: ${stats.size} bytes -> ${backupPath}`);
             }
-        } catch (error) {
-            // File doesn't exist yet or other error - safe to ignore
-            console.error('Failed to rotate log:', error);
+        } catch (error: any) {
+            // Silently ignore ENOENT — file simply doesn't exist yet on first write
+            if (error?.code !== 'ENOENT') {
+                console.error('Failed to rotate log:', error);
+            }
         }
     }
 
@@ -197,6 +202,9 @@ export class Logger {
             await this.rotateLogIfNeeded();
 
             const entry = message + '\n';
+
+            // Ensure parent directory exists before appending
+            await fs.mkdir(path.dirname(this.logFilePath.fsPath), { recursive: true });
 
             // Use Node.js fs.appendFile for efficient appending (doesn't read entire file)
             await fs.appendFile(this.logFilePath.fsPath, entry, 'utf-8');

@@ -5,11 +5,11 @@ suite('Extension Test Suite', () => {
     vscode.window.showInformationMessage('Start all tests.');
 
     test('Extension should be present', () => {
-        assert.ok(vscode.extensions.getExtension('mcp-ollama.mcp-ollama-extension'));
+        assert.ok(vscode.extensions.getExtension('internetics.mcp-ollama-extension'));
     });
 
     test('Should activate', async () => {
-        const extension = vscode.extensions.getExtension('mcp-ollama.mcp-ollama-extension');
+        const extension = vscode.extensions.getExtension('internetics.mcp-ollama-extension');
         if (extension) {
             await extension.activate();
             assert.ok(true);

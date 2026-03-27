@@ -2,7 +2,7 @@
   "name": "mcp-ollama-extension",
   "displayName": "MCP Ollama Manager",
   "description": "Manage MCP Ollama Python server from VS Code - start, stop, configure and monitor your Ollama MCP server",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "internetics",
   "icon": "icon.png",
   "author": {
@@ -123,6 +123,12 @@
         "category": "MCP Ollama"
       },
       {
+        "command": "mcp-ollama.refreshModels",
+        "title": "Refresh Models",
+        "category": "MCP Ollama",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "mcp-ollama.explainCode",
         "title": "Explain Code",
         "category": "MCP Ollama"
@@ -198,7 +204,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "mcp-ollama.listModels",
+          "command": "mcp-ollama.refreshModels",
           "when": "view == mcp-ollama.models",
           "group": "navigation"
         }
@@ -229,6 +235,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "18.x",
@@ -237,11 +244,12 @@
     "@typescript-eslint/parser": "^8.56.0",
     "@vscode/test-electron": "^2.3.9",
     "cross-env": "^10.1.0",
-    "eslint": "^10.0.1",
+    "eslint": "^8.57.1",
     "glob": "^13.0.3",
     "mocha": "^10.7.5",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.0",
+    "typescript-eslint": "^8.57.2",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
   },

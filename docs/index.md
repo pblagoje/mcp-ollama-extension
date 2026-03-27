@@ -8,7 +8,9 @@ A VS Code extension for managing the [MCP Ollama Python](https://pblagoje.github
 - **Status Monitoring** — Real-time server status in the status bar with health checks
 - **Configuration Management** — Easy configuration of server settings through VS Code settings
 - **Log Viewing** — Built-in output channel for server logs and monitoring
-- **Model Management** — List and view details of available Ollama models
+- **Ollama Models Sidebar** — Browse all locally installed models in a dedicated Explorer tree view; visible when the server is running with a refresh button in the view title
+- **Model Management** — Pull, delete, list running models, and view detailed model information
+- **AI Tools** — Chat with models, generate text, create embeddings, explain code, write docstrings
 - **Auto-start Option** — Configure the server to start automatically with VS Code
 
 ## Requirements
@@ -16,6 +18,8 @@ A VS Code extension for managing the [MCP Ollama Python](https://pblagoje.github
 - [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
 - Python 3.7 or higher
 - [Ollama](https://ollama.ai/) installed and running
+
+> **Automatic dependency check:** On every VS Code startup the extension silently verifies that `mcp-ollama-python` is installed. If it is missing a warning notification appears with an **Install Now** button that runs `pip install mcp-ollama-python` and streams output to the *MCP Ollama Server* output channel.
 
 ## Quick Start
 
@@ -30,7 +34,7 @@ Open VS Code Settings (`Ctrl+,`) and search for **MCP Ollama**.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `mcp-ollama.serverHost` | string | `localhost` | Hostname where Ollama is running (overrides `OLLAMA_HOST` env var). Examples: `localhost`, `ai`, `192.168.1.100` |
+| `mcp-ollama.serverHost` | string | `localhost` | Hostname where Ollama is running. When empty, falls back to the `OLLAMA_HOST` environment variable, then `localhost`. Examples: `localhost`, `ai`, `192.168.1.100` |
 | `mcp-ollama.pythonPath` | string | _(auto)_ | Path to Python executable; auto-detected if empty |
 | `mcp-ollama.autoStart` | boolean | `false` | Automatically start the server when VS Code starts |
 | `mcp-ollama.logLevel` | string | `info` | Log level for the MCP Ollama server (`debug`, `info`, `warning`, `error`) |
@@ -50,7 +54,8 @@ All commands are available via the Command Palette (`Ctrl+Shift+P`):
 | `MCP Ollama: View Server Logs` | Show the server output channel |
 | `MCP Ollama: Open Log File` | Open the extension log file in the editor |
 | `MCP Ollama: Clear Logs` | Clear both output channel and log file |
-| `MCP Ollama: List Available Models` | List all installed Ollama models |
+| `MCP Ollama: List Available Models` | Browse models with size and modification date |
+| `MCP Ollama: Refresh Models` | Refresh the Ollama Models sidebar tree |
 | `MCP Ollama: Chat with Model` | Start a chat session with a model |
 | `MCP Ollama: Generate Text` | Generate text using a model |
 | `MCP Ollama: Create Embedding` | Create text embeddings |
@@ -60,6 +65,16 @@ All commands are available via the Command Palette (`Ctrl+Shift+P`):
 | `MCP Ollama: List Running Models` | Show currently loaded models |
 | `MCP Ollama: Explain Code` | Use AI to explain selected code |
 | `MCP Ollama: Write Docstring` | Generate a docstring for selected code |
+
+## Ollama Models Sidebar
+
+The **Ollama Models** view appears in the Explorer sidebar whenever the server is running.
+
+- Each entry shows the model name and size on disk
+- Hover over an entry for the full digest and last-modified date
+- Click the **Refresh** icon in the view title to reload the list
+- The list clears automatically when the server stops
+- The sidebar refreshes automatically after a Pull or Delete operation
 
 ## Architecture
 

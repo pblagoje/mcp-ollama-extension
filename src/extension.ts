@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Logger } from './logger';
 import { MCPOllamaClient } from './mcpClient';
+import { OllamaModelsProvider } from './ollamaModelsProvider';
 
 // Constants
 const CONSTANTS = {
@@ -33,6 +34,7 @@ let serverStartTimeout: NodeJS.Timeout | null = null;
 let gracefulShutdownTimeout: NodeJS.Timeout | null = null;
 let serverStartPromise: Promise<void> | null = null;
 const logger = new Logger('MCP Ollama Extension');
+let ollamaModelsProvider: OllamaModelsProvider;
 
 // Platform detection
 const isWindows = process.platform === 'win32';
@@ -47,6 +49,11 @@ export function activate(context: vscode.ExtensionContext) {
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBarItem.command = 'mcp-ollama.showServerStatus';
     statusBarItem.show();
+
+    // Register tree view provider
+    ollamaModelsProvider = new OllamaModelsProvider();
+    const treeView = vscode.window.registerTreeDataProvider('mcp-ollama.models', ollamaModelsProvider);
+    const refreshModelsCommand = vscode.commands.registerCommand('mcp-ollama.refreshModels', () => ollamaModelsProvider.refresh());
 
     // Register commands
     const startCommand = vscode.commands.registerCommand('mcp-ollama.startServer', startServer);
@@ -73,6 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
     const writeDocstringCommand = vscode.commands.registerCommand('mcp-ollama.writeDocstring', writeDocstring);
 
     context.subscriptions.push(
+        treeView,
+        refreshModelsCommand,
         startCommand,
         stopCommand,
         restartCommand,
@@ -98,12 +107,26 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Listen for configuration changes
     context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(e => {
+        vscode.workspace.onDidChangeConfiguration(async e => {
             if (e.affectsConfiguration('mcp-ollama.extensionLogLevel')) {
                 const config = vscode.workspace.getConfiguration('mcp-ollama');
                 const newLevel = config.get<string>('extensionLogLevel', 'info');
                 logger.setLogLevel(newLevel);
                 logger.info('Extension log level changed', { level: newLevel });
+            }
+            if (e.affectsConfiguration('mcp-ollama.logLevel')) {
+                const config = vscode.workspace.getConfiguration('mcp-ollama');
+                const newLevel = config.get<string>('logLevel', 'info');
+                logger.info('Server log level setting changed', { level: newLevel });
+                if (mcpClient && mcpClient.isConnected()) {
+                    const choice = await vscode.window.showInformationMessage(
+                        `Server log level changed to '${newLevel}'. Restart the MCP Ollama server to apply.`,
+                        'Restart Now'
+                    );
+                    if (choice === 'Restart Now') {
+                        await restartServer();
+                    }
+                }
             }
         })
     );
@@ -121,12 +144,53 @@ export function activate(context: vscode.ExtensionContext) {
         }, CONSTANTS.AUTO_START_DELAY);
     }
 
+    // Check mcp-ollama-python is installed (background, non-blocking)
+    checkMcpModuleInstalled(config.pythonPath);
+
     // Update status periodically (clear any existing interval first)
     if (statusUpdateInterval) {
         clearInterval(statusUpdateInterval);
     }
     statusUpdateInterval = setInterval(updateServerStatus, CONSTANTS.STATUS_UPDATE_INTERVAL);
     logger.debug('Status update interval set', { interval: CONSTANTS.STATUS_UPDATE_INTERVAL });
+}
+
+/**
+ * Silently checks if mcp-ollama-python is installed and offers to install it if not
+ */
+function checkMcpModuleInstalled(pythonPath: string): void {
+    const check = spawn(pythonPath, ['-m', 'pip', 'show', 'mcp-ollama-python'], { stdio: 'pipe' });
+    check.on('close', async (code) => {
+        if (code !== 0) {
+            logger.warning('mcp-ollama-python is not installed');
+            const choice = await vscode.window.showWarningMessage(
+                'mcp-ollama-python is not installed. The MCP Ollama server will not start without it.',
+                'Install Now',
+                'Dismiss'
+            );
+            if (choice === 'Install Now') {
+                outputChannel.show();
+                outputChannel.appendLine('Installing mcp-ollama-python...');
+                const install = spawn(pythonPath, ['-m', 'pip', 'install', 'mcp-ollama-python'], { stdio: 'pipe' });
+                install.stdout?.on('data', (d) => outputChannel.append(d.toString()));
+                install.stderr?.on('data', (d) => outputChannel.append(d.toString()));
+                install.on('close', (installCode) => {
+                    if (installCode === 0) {
+                        logger.info('mcp-ollama-python installed successfully');
+                        vscode.window.showInformationMessage('mcp-ollama-python installed successfully.');
+                    } else {
+                        logger.error('Failed to install mcp-ollama-python', new Error(`Exit code ${installCode}`));
+                        vscode.window.showErrorMessage('Failed to install mcp-ollama-python. Check the Output panel for details.');
+                    }
+                });
+            }
+        } else {
+            logger.debug('mcp-ollama-python is installed');
+        }
+    });
+    check.on('error', (err) => {
+        logger.warning('Could not verify mcp-ollama-python installation', { error: err.message });
+    });
 }
 
 /**
@@ -341,6 +405,7 @@ async function startServer() {
         // We don't have direct access to stdout/stderr, but the MCP SDK handles communication
 
         updateServerStatus();
+        ollamaModelsProvider.setClient(mcpClient);
         logger.info('MCP server started successfully');
         vscode.window.showInformationMessage('MCP Ollama server started successfully');
 
@@ -433,6 +498,7 @@ async function stopServer() {
         }
 
         updateServerStatus();
+        ollamaModelsProvider.setClient(null);
         logger.info('MCP server stopped successfully');
         vscode.window.showInformationMessage('MCP Ollama server stopped');
 
@@ -518,9 +584,10 @@ async function configureServer() {
             break;
         }
         case 'Ollama Host': {
+            const resolvedHost = getValidatedConfig().serverHost;
             const host = await vscode.window.showInputBox({
                 prompt: 'Enter Ollama hostname or IP address',
-                value: vsConfig.get<string>('serverHost', 'localhost'),
+                value: resolvedHost,
                 placeHolder: 'e.g., localhost, ai, 192.168.1.100',
                 validateInput: (value: string) => {
                     if (!value || value.trim().length === 0) {
@@ -710,14 +777,16 @@ async function checkServerHealth(): Promise<boolean> {
     return isConnected;
 }
 
-async function chatWithModel() {
+async function chatWithModel(preSelectedModel?: string) {
     try {
-        const models = await getAvailableModels();
-
-        const modelName = await vscode.window.showQuickPick(
-            models.map((m: any) => m.name),
-            { placeHolder: 'Select a model to chat with' }
-        );
+        let modelName = preSelectedModel;
+        if (!modelName) {
+            const models = await getAvailableModels();
+            modelName = await vscode.window.showQuickPick(
+                models.map((m: any) => m.name),
+                { placeHolder: 'Select a model to chat with' }
+            );
+        }
 
         if (!modelName) {
             return;
@@ -742,7 +811,8 @@ async function chatWithModel() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
-            const response = await mcpClient.chat(modelName, messages);
+            logger.debug('Calling chat', { model: modelName });
+            const response = await mcpClient.chat(modelName!, messages);
             const responseText = response.message?.content || JSON.stringify(response, null, 2);
 
             const doc = await vscode.workspace.openTextDocument({
@@ -794,6 +864,7 @@ async function generateText() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
+            logger.debug('Calling generate', { model: modelName });
             const response = await mcpClient.generate(modelName, prompt);
             const responseText = response.response || JSON.stringify(response, null, 2);
 
@@ -857,6 +928,7 @@ async function createEmbedding() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
+            logger.debug('Calling embed', { model: modelName });
             const response = await mcpClient.embed(modelName, text);
             const embedding = response.embedding || response.embeddings?.[0] || response;
 
@@ -894,6 +966,7 @@ async function showModelDetails() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
+            logger.debug('Calling showModel', { model: modelName });
             const details = await mcpClient.showModel(modelName);
 
             const doc = await vscode.workspace.openTextDocument({
@@ -941,6 +1014,7 @@ async function pullModel() {
             }
             const result = await mcpClient.pullModel(modelName);
             vscode.window.showInformationMessage(`Successfully pulled model: ${modelName}`);
+            ollamaModelsProvider.refresh();
             logger.info('Model pulled successfully', { model: modelName, result });
         });
     } catch (error: unknown) {
@@ -992,6 +1066,7 @@ async function deleteModel() {
             }
             await mcpClient.deleteModel(modelName);
             vscode.window.showInformationMessage(`Successfully deleted model: ${modelName}`);
+            ollamaModelsProvider.refresh();
             logger.info('Model deleted successfully', { model: modelName });
         });
     } catch (error: unknown) {
@@ -1092,6 +1167,7 @@ async function explainCode() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
+            logger.debug('Calling generate (explainCode)', { model: modelName });
             const response = await mcpClient.generate(modelName, promptText);
             const explanation = response.response || JSON.stringify(response, null, 2);
 
@@ -1190,6 +1266,7 @@ async function writeDocstring() {
             if (!mcpClient || !mcpClient.isConnected()) {
                 throw new Error('MCP client disconnected during operation');
             }
+            logger.debug('Calling generate (writeDocstring)', { model: modelName });
             const response = await mcpClient.generate(modelName, promptText);
             const docstring = response.response || JSON.stringify(response, null, 2);
 

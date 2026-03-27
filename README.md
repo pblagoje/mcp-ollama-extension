@@ -8,7 +8,9 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 - 📊 **Status Monitoring**: Real-time server status in the status bar with health checks
 - ⚙️ **Configuration Management**: Easy configuration of server settings through VS Code settings
 - 📝 **Log Viewing**: Built-in output channel for server logs and monitoring
-- 🤖 **Model Management**: List and view details of available Ollama models
+- 🌳 **Ollama Models Sidebar**: Browse all locally installed models in a dedicated Explorer tree view — visible when the server is running, with a refresh button in the view title
+- 🤖 **Model Management**: Pull, delete, list running models, and view detailed model information
+- 💬 **AI Tools**: Chat with any model, generate text, create embeddings, explain selected code, and write docstrings
 - 🔧 **Auto-start Option**: Configure the server to start automatically with VS Code
 
 ## Requirements
@@ -16,6 +18,8 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 - [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
 - Python 3.7 or higher
 - [Ollama](https://ollama.ai/) installed and running
+
+> **Automatic dependency check:** On every VS Code startup the extension silently verifies that `mcp-ollama-python` is installed. If it is missing a warning notification appears with an **Install Now** button that runs `pip install mcp-ollama-python` and streams output to the *MCP Ollama Server* output channel.
 
 ## Installation
 
@@ -60,6 +64,8 @@ The extension will connect to Ollama at `http://{serverHost}:11434`
 - Network hostname: `ai`
 - IP address: `192.168.1.100`
 
+> **OLLAMA_HOST environment variable:** When `mcp-ollama.serverHost` is empty the extension automatically falls back to the `OLLAMA_HOST` environment variable. The **Configure Server → Ollama Host** dialog always pre-fills with the effective resolved value (setting → `OLLAMA_HOST` → `localhost`) so you never see a blank field.
+
 ### Settings
 
 | Setting | Type | Default | Description |
@@ -72,15 +78,41 @@ The extension will connect to Ollama at `http://{serverHost}:11434`
 
 ## Commands
 
-The extension provides the following commands (available in the Command Palette, Ctrl+Shift+P):
+All commands are available in the Command Palette (`Ctrl+Shift+P`) under the **MCP Ollama** category.
 
-- `MCP Ollama: Start Server` - Start the MCP Ollama server
-- `MCP Ollama: Stop Server` - Stop the MCP Ollama server
-- `MCP Ollama: Restart Server` - Restart the MCP Ollama server
-- `MCP Ollama: Show Server Status` - Display current server status and configuration
-- `MCP Ollama: Configure Server` - Open configuration options
-- `MCP Ollama: View Server Logs` - Show the server output channel
-- `MCP Ollama: List Available Models` - List and manage Ollama models
+### Server
+
+| Command | Description |
+|---------|-------------|
+| `MCP Ollama: Start Server` | Start the MCP Ollama server |
+| `MCP Ollama: Stop Server` | Stop the MCP Ollama server |
+| `MCP Ollama: Restart Server` | Restart the MCP Ollama server |
+| `MCP Ollama: Show Server Status` | Display current server status and configuration |
+| `MCP Ollama: Configure Server` | Interactive configuration wizard |
+| `MCP Ollama: View Server Logs` | Show the server output channel |
+| `MCP Ollama: Open Log File` | Open the extension log file |
+| `MCP Ollama: Clear Logs` | Clear the extension log file |
+
+### Models
+
+| Command | Description |
+|---------|-------------|
+| `MCP Ollama: List Available Models` | Browse models with size and modification date |
+| `MCP Ollama: Refresh Models` | Refresh the Ollama Models sidebar tree |
+| `MCP Ollama: Pull Model` | Download a model by name (e.g. `llama3.2`, `mistral`) |
+| `MCP Ollama: Delete Model` | Delete a locally installed model |
+| `MCP Ollama: Show Model Details` | View full model metadata in a Markdown document |
+| `MCP Ollama: List Running Models` | Show models currently loaded in memory with VRAM usage |
+
+### AI Tools
+
+| Command | Description |
+|---------|-------------|
+| `MCP Ollama: Chat with Model` | Start a chat session; response opens in a Markdown editor |
+| `MCP Ollama: Generate Text` | Generate text from a prompt using a selected model |
+| `MCP Ollama: Create Embedding` | Create a vector embedding for a text input |
+| `MCP Ollama: Explain Code` | Generate an explanation for the selected code in the active editor |
+| `MCP Ollama: Write Docstring` | Auto-generate a docstring for the selected function or class |
 
 ## Usage
 
@@ -106,9 +138,18 @@ The extension provides the following commands (available in the Command Palette,
 
 ### Managing Models
 
-- Use "MCP Ollama: List Available Models" to see all installed models
-- Select a model to view detailed information
-- Models are shown in the Explorer view when the server is running
+The **Ollama Models** view appears in the Explorer sidebar whenever the server is running.
+
+- Each entry shows the model name and its size on disk
+- Hover over an entry for the full digest and last-modified date
+- Click the **$(refresh) Refresh** icon in the view title to reload the list
+- The list clears automatically when the server stops
+
+You can also manage models via the Command Palette:
+- **Pull Model** — prompts for a model name (e.g. `llama3.2`) and downloads it; the sidebar refreshes on completion
+- **Delete Model** — select from installed models; asks for confirmation before deleting; sidebar refreshes on completion
+- **List Running Models** — shows which models are currently loaded in GPU/CPU memory and their VRAM usage
+- **Show Model Details** — opens a Markdown document with the full model metadata (architecture, parameters, quantization, etc.)
 
 ## Development
 
