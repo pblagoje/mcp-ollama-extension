@@ -16,7 +16,7 @@ A VS Code extension for managing the [MCP Ollama Python](https://pblagoje.github
 ## Requirements
 
 - [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
-- Python 3.7 or higher
+- Python 3.10 or higher
 - [Ollama](https://ollama.ai/) installed and running
 
 > **Automatic dependency check:** On every VS Code startup the extension silently verifies that `mcp-ollama-python` is installed. If it is missing a warning notification appears with an **Install Now** button that runs `pip install mcp-ollama-python` and streams output to the *MCP Ollama Server* output channel.
@@ -39,6 +39,8 @@ Open VS Code Settings (`Ctrl+,`) and search for **MCP Ollama**.
 | `mcp-ollama.autoStart` | boolean | `false` | Automatically start the server when VS Code starts |
 | `mcp-ollama.logLevel` | string | `info` | Log level for the MCP Ollama server (`debug`, `info`, `warning`, `error`) |
 | `mcp-ollama.extensionLogLevel` | string | `info` | Log level for the VS Code extension itself (`debug`, `info`, `warning`, `error`) |
+
+See [Security](SECURITY.md) for host validation, MCP allowlists, and the child-process trust model.
 
 ## Commands
 

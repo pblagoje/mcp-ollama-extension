@@ -16,7 +16,7 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 ## Requirements
 
 - [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
-- Python 3.7 or higher
+- Python 3.10 or higher (required by [mcp-ollama-python](https://pblagoje.github.io/mcp-ollama-python/))
 - [Ollama](https://ollama.ai/) installed and running
 
 > **Automatic dependency check:** On every VS Code startup the extension silently verifies that `mcp-ollama-python` is installed. If it is missing a warning notification appears with an **Install Now** button that runs `pip install mcp-ollama-python` and streams output to the *MCP Ollama Server* output channel.
@@ -120,9 +120,10 @@ All commands are available in the Command Palette (`Ctrl+Shift+P`) under the **M
 
 1. Install the extension
 2. Open the Command Palette (Ctrl+Shift+P)
-3. Run "MCP Ollama: Configure Server"
-4. Select "Configure Server Path" and choose your mcp-ollama-python installation directory
-5. Configure other settings as needed (port, log level, etc.)
+3. Run **MCP Ollama: Configure Server**
+4. Set **Ollama Host** if Ollama is not on `localhost` (LAN hosts are supported; remote access requires a trusted network)
+5. Optionally set **Python Path** if auto-detect does not find your interpreter
+6. Run **MCP Ollama: Start Server**
 
 ### Starting the Server
 
@@ -255,6 +256,10 @@ npm run watch-tests
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for full release history.
+
+## Security
+
+Host validation, MCP allowlists, and minimal child-process environment are documented in [docs/SECURITY.md](docs/SECURITY.md). Use **mcp-ollama-python** 1.0.8+ for matching server-side hardening.
 
 ## Support
 

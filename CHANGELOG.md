@@ -5,6 +5,22 @@ All notable changes to the MCP Ollama Manager Extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-07-06
+
+### Security
+- Added `src/security.ts` — host/Python path/model validation, MCP tool/prompt/resource allowlists
+- MCP child process uses minimal environment instead of full `process.env` leak
+- Sets `OLLAMA_ALLOW_REMOTE_HOST=1` automatically for non-local Ollama hosts (compatible with mcp-ollama-python 1.0.8+)
+- Removed verbose MCP response logging from the client
+
+### Fixed
+- Stale hardcoded MCP client version (`1.0.3`) — now reads from `package.json`
+- Removed unused path validation helpers; strengthened Python path checks
+- Pull Model validates model names before calling MCP
+
+### Added
+- `docs/SECURITY.md` and security tests in `src/test/suite/security.test.ts`
+
 ## [1.0.8] - 2026-03-27
 
 ### Changed

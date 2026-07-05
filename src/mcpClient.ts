@@ -1,5 +1,14 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { version as extensionVersion } from '../package.json';
+import {
+    buildMcpServerEnv,
+    validateModelName,
+    validatePromptName,
+    validatePythonPath,
+    validateResourceUri,
+    validateToolName,
+} from './security';
 
 // Timeout constants (in milliseconds)
 const TIMEOUT_CHAT = 300000; // 5 minutes
@@ -19,41 +28,27 @@ export class MCPOllamaClient {
     private transport: StdioClientTransport | null = null;
 
     async connect(config: MCPClientConfig): Promise<void> {
-        // Prepare OLLAMA_HOST environment variable
-        // If config.host already includes protocol, use as-is, otherwise add http://
-        let ollamaHost = config.host;
-        if (!ollamaHost.startsWith('http://') && !ollamaHost.startsWith('https://')) {
-            ollamaHost = `http://${ollamaHost}:11434`;
-        }
+        const pythonPath = validatePythonPath(config.pythonPath || 'py') || 'py';
+        const childEnv = buildMcpServerEnv(config.host);
 
-        // Create transport that spawns the MCP server process
         this.transport = new StdioClientTransport({
-            command: config.pythonPath,
+            command: pythonPath,
             args: ['-m', 'mcp_ollama_python'],
-            env: {
-                ...process.env,
-                OLLAMA_HOST: ollamaHost
-            }
+            env: childEnv,
         });
 
-        // Create MCP client
         this.client = new Client({
             name: 'mcp-ollama-extension',
-            version: '1.0.3'
+            version: extensionVersion,
         }, {
             capabilities: {}
         });
 
-        // Connect to the server
         await this.client.connect(this.transport);
 
-        // Test basic communication by listing resources
         try {
-            const resources = await this.client.listResources();
-            console.log('[MCP Client] Available resources:', resources);
+            await this.client.listResources();
         } catch (error) {
-            console.error('[MCP Client] Failed to list resources:', error);
-            // Throw error to indicate connection issues
             throw new Error(`MCP server connected but failed initial communication test: ${error}`);
         }
     }
@@ -77,25 +72,17 @@ export class MCPOllamaClient {
         }
 
         try {
-            console.log('[MCP Client] Requesting resource: ollama://models');
-
-            // Read the models resource from the MCP server
+            validateResourceUri('ollama://models');
             const result = await this.client.readResource({
                 uri: 'ollama://models'
             });
 
-            console.log('[MCP Client] Received result:', JSON.stringify(result, null, 2));
-
-            // Parse the JSON response
             if (result.contents && result.contents.length > 0) {
                 const content = result.contents[0] as { text?: string };
-                console.log('[MCP Client] Content:', content);
 
                 if (content.text) {
                     try {
                         const data = JSON.parse(content.text);
-                        console.log('[MCP Client] Parsed data:', data);
-                        // Validate structure
                         if (!data || typeof data !== 'object') {
                             throw new Error('Invalid data structure: expected object');
                         }
@@ -104,17 +91,15 @@ export class MCPOllamaClient {
                         }
                         return data.models;
                     } catch (parseError) {
-                        // Show the actual response to help debug
-                        console.error('[MCP Client] JSON parse error:', parseError);
-                        throw new Error(`Failed to parse MCP response as JSON. Response was: ${content.text.substring(0, 200)}`);
+                        throw new Error(
+                            `Failed to parse MCP response as JSON. Response was: ${content.text.substring(0, 200)}`
+                        );
                     }
                 }
             }
 
-            console.warn('[MCP Client] No contents in result');
             return [];
         } catch (error) {
-            console.error('[MCP Client] Error in listModels:', error);
             if (error instanceof Error) {
                 throw error;
             }
@@ -129,7 +114,7 @@ export class MCPOllamaClient {
 
         try {
             const result = await this.client.readResource({
-                uri: 'ollama://running'
+                uri: validateResourceUri('ollama://running')
             });
 
             if (result.contents && result.contents.length > 0) {
@@ -152,7 +137,7 @@ export class MCPOllamaClient {
 
         try {
             const result = await this.client.readResource({
-                uri: 'ollama://config'
+                uri: validateResourceUri('ollama://config')
             });
 
             if (result.contents && result.contents.length > 0) {
@@ -186,7 +171,7 @@ export class MCPOllamaClient {
         }
 
         try {
-            // Use custom timeout if provided, otherwise use default
+            validateToolName(name);
             const options = timeout ? { timeout } : undefined;
             const result = await this.client.callTool({
                 name,
@@ -226,7 +211,7 @@ export class MCPOllamaClient {
 
     // Ollama-specific tool methods
     async chat(model: string, messages: any[], options?: any): Promise<any> {
-        const args: any = { model, messages };
+        const args: any = { model: validateModelName(model), messages };
         if (options) {
             args.options = options;
         }
@@ -235,7 +220,7 @@ export class MCPOllamaClient {
     }
 
     async generate(model: string, prompt: string, options?: any): Promise<any> {
-        const args: any = { model, prompt };
+        const args: any = { model: validateModelName(model), prompt };
         if (options) {
             args.options = options;
         }
@@ -244,22 +229,26 @@ export class MCPOllamaClient {
     }
 
     async embed(model: string, input: string | string[]): Promise<any> {
-        const result = await this.callTool('ollama_embed', { model, input }, TIMEOUT_DEFAULT);
+        const result = await this.callTool(
+            'ollama_embed',
+            { model: validateModelName(model), input },
+            TIMEOUT_DEFAULT
+        );
         return this.parseToolResponse(result);
     }
 
     async showModel(model: string): Promise<any> {
-        const result = await this.callTool('ollama_show', { model }, TIMEOUT_DEFAULT);
+        const result = await this.callTool('ollama_show', { model: validateModelName(model) }, TIMEOUT_DEFAULT);
         return this.parseToolResponse(result);
     }
 
     async pullModel(model: string): Promise<any> {
-        const result = await this.callTool('ollama_pull', { model }, TIMEOUT_PULL);
+        const result = await this.callTool('ollama_pull', { model: validateModelName(model) }, TIMEOUT_PULL);
         return this.parseToolResponse(result);
     }
 
     async deleteModel(model: string): Promise<any> {
-        const result = await this.callTool('ollama_delete', { model }, TIMEOUT_DEFAULT);
+        const result = await this.callTool('ollama_delete', { model: validateModelName(model) }, TIMEOUT_DEFAULT);
         return this.parseToolResponse(result);
     }
 
@@ -293,6 +282,7 @@ export class MCPOllamaClient {
         }
 
         try {
+            validatePromptName(name);
             const result = await this.client.getPrompt({ name, arguments: args });
             return result;
         } catch (error) {

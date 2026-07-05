@@ -1,10 +1,14 @@
 import * as vscode from 'vscode';
-import { ChildProcess, spawn } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
+import { spawn } from 'child_process';
 import { Logger } from './logger';
 import { MCPOllamaClient } from './mcpClient';
 import { OllamaModelsProvider } from './ollamaModelsProvider';
+import {
+    buildOllamaHostUrl,
+    parseServerHostInput,
+    validateModelName,
+    validatePythonPath,
+} from './security';
 
 // Constants
 const CONSTANTS = {
@@ -194,71 +198,40 @@ function checkMcpModuleInstalled(pythonPath: string): void {
 }
 
 /**
- * Validates and sanitizes a file system path
- */
-async function validatePath(inputPath: string): Promise<boolean> {
-    try {
-        const resolvedPath = path.resolve(inputPath);
-        const uri = vscode.Uri.file(resolvedPath);
-        const stats = await vscode.workspace.fs.stat(uri);
-        return stats.type === vscode.FileType.Directory;
-    } catch (error) {
-        logger.error('Path validation failed', { path: inputPath, error });
-        return false;
-    }
-}
-
-/**
- * Validates a file exists and is accessible
- */
-async function validateFile(filePath: string): Promise<boolean> {
-    try {
-        const resolvedPath = path.resolve(filePath);
-        const uri = vscode.Uri.file(resolvedPath);
-        const stats = await vscode.workspace.fs.stat(uri);
-        return stats.type === vscode.FileType.File;
-    } catch (error) {
-        logger.error('File validation failed', { path: filePath, error });
-        return false;
-    }
-}
-
-/**
  * Gets and validates configuration
  */
 function getValidatedConfig(): ServerConfig {
     const config = vscode.workspace.getConfiguration('mcp-ollama');
 
     let pythonPath = config.get<string>('pythonPath', '');
-
-    // Auto-detect Python if not configured
     if (!pythonPath) {
-        // Try common Python commands in order
-        if (isWindows) {
-            pythonPath = 'py'; // Windows Python Launcher
-        } else {
-            pythonPath = 'python3'; // Unix-like systems prefer python3
-        }
+        pythonPath = isWindows ? 'py' : 'python3';
+    } else {
+        pythonPath = validatePythonPath(pythonPath);
     }
 
-    // Get serverHost from config, or fall back to OLLAMA_HOST env var, or default to localhost
     let serverHost = config.get<string>('serverHost', '');
     if (!serverHost) {
         const ollamaHost = process.env.OLLAMA_HOST;
         if (ollamaHost) {
-            // Extract hostname from OLLAMA_HOST (e.g., http://ai:11434 -> ai)
             try {
-                const url = new URL(ollamaHost);
-                serverHost = url.hostname;
-                logger.debug('Using OLLAMA_HOST environment variable', { ollamaHost, extracted: serverHost });
-            } catch {
-                // If not a valid URL, use as-is
-                serverHost = ollamaHost.replace(/^https?:\/\//, '').split(':')[0];
-                logger.debug('Using OLLAMA_HOST environment variable (parsed)', { ollamaHost, extracted: serverHost });
+                serverHost = parseServerHostInput(ollamaHost);
+                logger.debug('Using OLLAMA_HOST environment variable', {
+                    ollamaHost,
+                    extracted: serverHost,
+                });
+            } catch (error) {
+                logger.warning('Invalid OLLAMA_HOST environment variable; using localhost', {
+                    ollamaHost,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+                serverHost = 'localhost';
             }
         } else {
             serverHost = 'localhost';
         }
+    } else {
+        serverHost = parseServerHostInput(serverHost);
     }
 
     const logLevel = config.get<string>('logLevel', 'info');
@@ -268,7 +241,7 @@ function getValidatedConfig(): ServerConfig {
         pythonPath,
         serverHost,
         logLevel,
-        autoStart
+        autoStart,
     };
 }
 
@@ -341,7 +314,7 @@ async function startServer() {
     logger.info('MCP client configuration', {
         python: pythonPath,
         host: host,
-        ollamaUrl: `http://${host}:11434`
+        ollamaUrl: buildOllamaHostUrl(host),
     });
 
     outputChannel.clear();
@@ -351,12 +324,8 @@ async function startServer() {
     outputChannel.appendLine(`Ollama Host: ${host}`);
 
     try {
-        // Validate Python path before use
-        if (pythonPath && !pythonPath.match(/^(python|python3|py|[a-zA-Z]:[\\\\/]|[/~])/)) {
-            throw new Error(`Invalid Python path: ${pythonPath}`);
-        }
+        validatePythonPath(pythonPath);
 
-        // Check if mcp-ollama-python is installed
         const checkInstalled = spawn(pythonPath, ['-m', 'pip', 'show', 'mcp-ollama-python'], {
             stdio: 'pipe'
         });
@@ -380,7 +349,7 @@ async function startServer() {
         logger.info('Connecting to MCP server...', {
             pythonPath,
             host,
-            ollamaUrl: `http://${host}:11434`
+            ollamaUrl: buildOllamaHostUrl(host),
         });
 
         await mcpClient.connect({
@@ -392,7 +361,7 @@ async function startServer() {
 
         logger.info('MCP client connected successfully');
         outputChannel.appendLine('MCP server connected successfully!');
-        outputChannel.appendLine(`Ollama will be queried at: http://${host}:11434`);
+        outputChannel.appendLine(`Ollama will be queried at: ${buildOllamaHostUrl(host)}`);
 
         // Set timeout for initial health check
         serverStartTimeout = setTimeout(async () => {
@@ -529,7 +498,7 @@ async function showServerStatus() {
 ${icon} MCP Ollama Server Status
 
 Status: ${isRunning ? 'Running ✓' : 'Stopped ✗'}
-Ollama Host: http://${config.serverHost}:11434
+Ollama Host: ${buildOllamaHostUrl(config.serverHost)}
 MCP Client: ${mcpClient && mcpClient.isConnected() ? 'Connected' : 'Not connected'}
 Configuration:
   - Python Path: ${config.pythonPath || 'Auto-detect'}
@@ -573,12 +542,14 @@ async function configureServer() {
             });
             if (pythonPath !== undefined) {
                 try {
-                    await vsConfig.update('pythonPath', pythonPath, vscode.ConfigurationTarget.Global);
-                    logger.info('Python path updated', { path: pythonPath || 'auto-detect' });
+                    const validatedPath = pythonPath ? validatePythonPath(pythonPath) : '';
+                    await vsConfig.update('pythonPath', validatedPath, vscode.ConfigurationTarget.Global);
+                    logger.info('Python path updated', { path: validatedPath || 'auto-detect' });
                     vscode.window.showInformationMessage('Python path updated');
                 } catch (error) {
-                    logger.error('Failed to update Python path', error instanceof Error ? error : new Error(String(error)));
-                    vscode.window.showErrorMessage('Failed to update Python path');
+                    const message = error instanceof Error ? error.message : String(error);
+                    logger.error('Failed to update Python path', error instanceof Error ? error : new Error(message));
+                    vscode.window.showErrorMessage(`Invalid Python path: ${message}`);
                 }
             }
             break;
@@ -591,22 +562,19 @@ async function configureServer() {
                 placeHolder: 'e.g., localhost, ai, 192.168.1.100',
                 validateInput: (value: string) => {
                     if (!value || value.trim().length === 0) {
-                        return null; // Allow empty for default
+                        return null;
                     }
-                    // Remove protocol if present
-                    const cleanValue = value.replace(/^https?:\/\//, '');
-                    // Validate hostname/IP format (basic validation)
-                    const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$|^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
-                    if (!hostnameRegex.test(cleanValue.split(':')[0])) {
-                        return 'Invalid hostname or IP address format';
+                    try {
+                        parseServerHostInput(value);
+                        return null;
+                    } catch (error) {
+                        return error instanceof Error ? error.message : 'Invalid hostname or IP address';
                     }
-                    return null;
                 }
             });
             if (host) {
                 try {
-                    // Clean the host value (remove protocol if present)
-                    const cleanHost = host.replace(/^https?:\/\//, '').split(':')[0];
+                    const cleanHost = parseServerHostInput(host);
                     await vsConfig.update('serverHost', cleanHost, vscode.ConfigurationTarget.Global);
                     logger.info('Ollama host updated', { host: cleanHost });
                     vscode.window.showInformationMessage('Ollama host updated');
@@ -717,7 +685,7 @@ Modified: ${modifiedDate}
         // Show detailed error to help diagnose MCP server issues
         if (errorMessage.includes('Failed to parse MCP response')) {
             vscode.window.showErrorMessage(
-                `MCP server returned an error instead of model data. Check that:\n1. Ollama is running at http://${getValidatedConfig().serverHost}:11434\n2. The MCP server can connect to Ollama\n\nError: ${errorMessage}`,
+                `MCP server returned an error instead of model data. Check that:\n1. Ollama is running at ${buildOllamaHostUrl(getValidatedConfig().serverHost)}\n2. The MCP server can connect to Ollama\n\nError: ${errorMessage}`,
                 'View Logs'
             ).then(choice => {
                 if (choice === 'View Logs') {
@@ -1000,6 +968,14 @@ async function pullModel() {
     });
 
     if (!modelName) {
+        return;
+    }
+
+    try {
+        validateModelName(modelName);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        vscode.window.showErrorMessage(message);
         return;
     }
 
