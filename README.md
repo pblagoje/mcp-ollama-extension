@@ -1,6 +1,48 @@
 # MCP Ollama Manager Extension
 
-A VS Code extension for managing the MCP Ollama Python server, providing a convenient interface to start, stop, configure and monitor your Ollama MCP server directly from Visual Studio Code.
+A VS Code extension for managing the **[MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python)** server — start, stop, configure, and monitor Ollama MCP tools directly from Visual Studio Code.
+
+[![VS Code](https://img.shields.io/badge/VS%20Code-1.85+-blue)](https://code.visualstudio.com/)
+[![Marketplace](https://img.shields.io/visual-studio-marketplace/v/internetics.mcp-ollama-extension)](https://marketplace.visualstudio.com/items?itemName=internetics.mcp-ollama-extension)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+| | Links |
+|---|---|
+| **Docs** | [Full documentation](https://pblagoje.github.io/mcp-ollama-extension/) |
+| **Marketplace** | [MCP Ollama Manager](https://marketplace.visualstudio.com/items?itemName=internetics.mcp-ollama-extension) |
+| **Required server** | [mcp-ollama-python](https://github.com/pblagoje/mcp-ollama-python) · [docs](https://pblagoje.github.io/mcp-ollama-python/) · [PyPI](https://pypi.org/project/mcp-ollama-python/) |
+
+---
+
+## Ecosystem
+
+This extension is the **VS Code UI**. The MCP server lives in a separate repository:
+
+```
+┌─────────────────────────────────────┐
+│  mcp-ollama-extension (this repo)   │  ← status bar, models tree, commands
+│  https://github.com/pblagoje/       │
+│       mcp-ollama-extension          │
+└─────────────────┬───────────────────┘
+                  │ stdio / MCP
+┌─────────────────▼───────────────────┐
+│  mcp-ollama-python                  │  ← MCP tools (chat, list, pull, …)
+│  https://github.com/pblagoje/       │
+│       mcp-ollama-python             │
+└─────────────────┬───────────────────┘
+                  │ HTTP :11434
+┌─────────────────▼───────────────────┐
+│  Ollama                             │
+└─────────────────────────────────────┘
+```
+
+| Component | Repository | Install |
+|-----------|------------|---------|
+| **Extension (this)** | [mcp-ollama-extension](https://github.com/pblagoje/mcp-ollama-extension) | VS Code Marketplace or `.vsix` |
+| **MCP server (required)** | [mcp-ollama-python](https://github.com/pblagoje/mcp-ollama-python) | `pip install mcp-ollama-python` |
+| **Ollama** | [ollama.ai](https://ollama.ai/) | Install Ollama and keep it running |
+
+Without the Python package, the extension cannot talk to Ollama. Server docs, tools, and security: [pblagoje.github.io/mcp-ollama-python](https://pblagoje.github.io/mcp-ollama-python/).
 
 ## Features
 
@@ -15,8 +57,8 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 
 ## Requirements
 
-- [MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python) installed
-- Python 3.10 or higher (required by [mcp-ollama-python](https://pblagoje.github.io/mcp-ollama-python/))
+- **[mcp-ollama-python](https://github.com/pblagoje/mcp-ollama-python)** installed (`pip install mcp-ollama-python`) — [docs](https://pblagoje.github.io/mcp-ollama-python/)
+- Python 3.10 or higher
 - [Ollama](https://ollama.ai/) installed and running
 
 > **Automatic dependency check:** On every VS Code startup the extension silently verifies that `mcp-ollama-python` is installed. If it is missing a warning notification appears with an **Install Now** button that runs `pip install mcp-ollama-python` and streams output to the *MCP Ollama Server* output channel.
@@ -39,11 +81,11 @@ A VS Code extension for managing the MCP Ollama Python server, providing a conve
 5. Install the resulting `.vsix` file using `code --install-extension mcp-ollama-extension-*.vsix`
 
 Or upgrade:
-1. Uninstall the old version (optional but recommended)
-code --uninstall-extension internetics.mcp-ollama-extension
 
-2. Install the new VSIX
+```bash
+code --uninstall-extension internetics.mcp-ollama-extension
 code --install-extension mcp-ollama-extension-1.0.1.vsix
+```
 
 ## Configuration
 
@@ -75,6 +117,8 @@ The extension will connect to Ollama at `http://{serverHost}:11434`
 | `mcp-ollama.autoStart` | boolean | `false` | Automatically start the server when VS Code starts |
 | `mcp-ollama.logLevel` | string | `info` | Log level for the MCP Ollama server (debug, info, warning, error) |
 | `mcp-ollama.extensionLogLevel` | string | `info` | Log level for the VS Code extension itself (debug, info, warning, error) |
+
+See [LOGGING.md](LOGGING.md) for how log levels affect health-check noise and server output.
 
 ## Commands
 
@@ -119,11 +163,12 @@ All commands are available in the Command Palette (`Ctrl+Shift+P`) under the **M
 ### First Time Setup
 
 1. Install the extension
-2. Open the Command Palette (Ctrl+Shift+P)
-3. Run **MCP Ollama: Configure Server**
-4. Set **Ollama Host** if Ollama is not on `localhost` (LAN hosts are supported; remote access requires a trusted network)
-5. Optionally set **Python Path** if auto-detect does not find your interpreter
-6. Run **MCP Ollama: Start Server**
+2. Install the server: `pip install mcp-ollama-python` ([server docs](https://pblagoje.github.io/mcp-ollama-python/installation/))
+3. Open the Command Palette (Ctrl+Shift+P)
+4. Run **MCP Ollama: Configure Server**
+5. Set **Ollama Host** if Ollama is not on `localhost` (LAN hosts are supported; remote access requires a trusted network)
+6. Optionally set **Python Path** if auto-detect does not find your interpreter
+7. Run **MCP Ollama: Start Server**
 
 ### Starting the Server
 
@@ -259,13 +304,14 @@ See [CHANGELOG.md](CHANGELOG.md) for full release history.
 
 ## Security
 
-Host validation, MCP allowlists, and minimal child-process environment are documented in [docs/SECURITY.md](docs/SECURITY.md). Use **mcp-ollama-python** 1.0.8+ for matching server-side hardening.
+Host validation, MCP allowlists, and minimal child-process environment are documented in [docs/SECURITY.md](docs/SECURITY.md). Use **mcp-ollama-python** 1.0.8+ for matching server-side hardening — see [server security docs](https://pblagoje.github.io/mcp-ollama-python/SECURITY/).
 
 ## Support
 
 - Report issues on [GitHub Issues](https://github.com/pblagoje/mcp-ollama-extension/issues)
 - Check the [documentation](https://pblagoje.github.io/mcp-ollama-extension/) for detailed guides
 - Join [GitHub Discussions](https://github.com/pblagoje/mcp-ollama-extension/discussions) for questions and suggestions
+- Server / MCP tool issues: [mcp-ollama-python Issues](https://github.com/pblagoje/mcp-ollama-python/issues)
 
 ## Contributing
 
@@ -281,9 +327,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 
-- [MCP Ollama Python](https://pblagoje.github.io/mcp-ollama-python/) - The Python MCP server for Ollama
-- [Ollama](https://ollama.ai/) - Get up and running with large language models locally
+| Project | Role | Links |
+|---------|------|-------|
+| **[mcp-ollama-python](https://github.com/pblagoje/mcp-ollama-python)** | MCP server this extension manages | [GitHub](https://github.com/pblagoje/mcp-ollama-python) · [Docs](https://pblagoje.github.io/mcp-ollama-python/) · [PyPI](https://pypi.org/project/mcp-ollama-python/) |
+| [Ollama](https://ollama.ai/) | Local LLM runtime | [ollama.ai](https://ollama.ai/) |
 
 ---
 
-**Note**: This extension requires the MCP Ollama Python server to be installed separately. Please refer to the [MCP Ollama Python documentation](https://pblagoje.github.io/mcp-ollama-python/) for installation instructions.
+**Note:** This extension requires the MCP Ollama Python server separately. Installation: [mcp-ollama-python docs](https://pblagoje.github.io/mcp-ollama-python/installation/).

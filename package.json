@@ -1,7 +1,7 @@
 {
   "name": "mcp-ollama-extension",
   "displayName": "MCP Ollama Manager",
-  "description": "Manage MCP Ollama Python server from VS Code - start, stop, configure and monitor your Ollama MCP server",
+  "description": "Manage MCP Ollama Python server from VS Code - start, stop, configure and monitor your Ollama MCP server. Companion to https://github.com/pblagoje/mcp-ollama-python",
   "version": "1.0.9",
   "publisher": "internetics",
   "icon": "icon.png",

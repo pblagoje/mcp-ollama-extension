@@ -2,7 +2,14 @@
 
 ## Overview
 
-This VS Code extension manages the **MCP Ollama Python server** and provides a user interface for interacting with Ollama models through the Model Context Protocol (MCP).
+This VS Code extension manages the **[MCP Ollama Python](https://github.com/pblagoje/mcp-ollama-python)** server and provides a user interface for interacting with Ollama models through the Model Context Protocol (MCP).
+
+| Component | Repository |
+|-----------|------------|
+| Extension (this) | [mcp-ollama-extension](https://github.com/pblagoje/mcp-ollama-extension) |
+| MCP server | [mcp-ollama-python](https://github.com/pblagoje/mcp-ollama-python) |
+
+See also [docs/companion-server.md](docs/companion-server.md).
 
 ## Architecture Components
 
@@ -10,7 +17,8 @@ This VS Code extension manages the **MCP Ollama Python server** and provides a u
 - **Protocol**: MCP (Model Context Protocol) over stdio/JSON-RPC
 - **Purpose**: Provides structured access to Ollama functionality through MCP resources, tools, and prompts
 - **Communication**: Standard input/output (stdio), NOT HTTP endpoints
-- **Location**: Python package `mcp_ollama_python`
+- **Location**: Python package [`mcp-ollama-python`](https://github.com/pblagoje/mcp-ollama-python) (`mcp_ollama_python`)
+- **Docs**: [pblagoje.github.io/mcp-ollama-python](https://pblagoje.github.io/mcp-ollama-python/)
 
 ### 2. VS Code Extension
 - **Language**: TypeScript
@@ -139,6 +147,13 @@ code --install-extension mcp-ollama-extension-{version}.vsix
 - `@modelcontextprotocol/sdk` - MCP protocol implementation
 - `axios` - HTTP client (for potential future direct Ollama queries if needed)
 - `vscode` - VS Code extension API
+- **Runtime:** [`mcp-ollama-python`](https://github.com/pblagoje/mcp-ollama-python) must be installed in the selected Python environment
+
+## Related documentation
+
+- [Companion MCP Server](docs/companion-server.md)
+- [mcp-ollama-python docs](https://pblagoje.github.io/mcp-ollama-python/)
+- [mcp-ollama-python architecture](https://pblagoje.github.io/mcp-ollama-python/architecture/)
 
 ## Future Enhancements
 
